@@ -75,6 +75,16 @@ class TmdbClient:
     async def on_the_air_tv(self) -> list[dict[str, Any]]:
         return (await self._get("/tv/on_the_air")).get("results", [])
 
+    async def by_provider(self, kind: str, provider_id: int) -> list[dict[str, Any]]:
+        """Rows like "Only on Netflix": discover by watch provider in the region."""
+        path = f"/discover/{kind}"
+        params = {
+            "with_watch_providers": str(provider_id),
+            "watch_region": self.region,
+            "sort_by": "popularity.desc",
+        }
+        return (await self._get(path, params)).get("results", [])
+
     async def search(self, query: str) -> list[dict[str, Any]]:
         if not query.strip():
             return []

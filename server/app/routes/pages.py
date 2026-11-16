@@ -25,7 +25,7 @@ from ..db import (
     wrapped_stats,
 )
 from ..state import get_tmdb, templates
-from ..tmdb import TmdbUnavailable, extract_trailer, watch_providers
+from ..tmdb import TmdbUnavailable, extract_trailer, image_url, watch_providers
 
 router = APIRouter()
 
@@ -67,17 +67,36 @@ def _ctx(request: Request, conn: sqlite3.Connection | None = None, **extra) -> d
     return ctx
 
 
+PROVIDER_ROWS = [
+    ("movie", 8, "Netflix"),
+    ("movie", 337, "Disney Plus"),
+    ("tv", 8, "Netflix TV"),
+]
+
+
 @router.get("/")
 async def home(request: Request, conn: sqlite3.Connection = Depends(get_conn)):
     rows: dict[str, list] = {}
+    provider_rows: list[dict] = []
+    featured: list[dict] = []
     tmdb_error = None
 
     if get_tmdb().ready:
         try:
-            rows["trending"] = [get_tmdb().card(r) for r in (await get_tmdb().trending())[:12]]
+            trending_raw = (await get_tmdb().trending())[:12]
+            trending = [get_tmdb().card(r) for r in trending_raw]
+            rows["trending"] = trending
             rows["popular_movies"] = [get_tmdb().card(r) for r in (await get_tmdb().popular_movies())[:12]]
             rows["top_rated"] = [get_tmdb().card(r) for r in (await get_tmdb().top_rated_movies())[:12]]
             rows["popular_tv"] = [get_tmdb().card(r) for r in (await get_tmdb().popular_tv())[:12]]
+            for kind, pid, label in PROVIDER_ROWS:
+                cards = [get_tmdb().card(r) for r in (await get_tmdb().by_provider(kind, pid))[:12]]
+                if cards:
+                    provider_rows.append({"label": label, "cards": cards})
+            featured = [
+                dict(c, overview=r.get("overview", ""))
+                for c, r in zip([c for c in trending if c.get("backdrop")][:4], trending_raw[:4], strict=False)
+            ]
         except TmdbUnavailable as exc:
             tmdb_error = str(exc)
 
@@ -92,6 +111,8 @@ async def home(request: Request, conn: sqlite3.Connection = Depends(get_conn)):
             request,
             conn,
             rows=rows,
+            provider_rows=provider_rows,
+            featured=featured,
             archive_films=archive_films,
             library=library_rows,
             continue_rows=continue_rows,
@@ -119,8 +140,28 @@ async def detail(request: Request, media_type: str, tmdb_id: int, conn: sqlite3.
     local_files = library_for_tmdb(conn, tmdb_id, media_type)
     in_watchlist = watchlist_has(conn, tmdb_id, media_type, pid)
     resume = progress_get(conn, tmdb_id, media_type, pid)
-    cast = (data.get("credits") or {}).get("cast", [])[:8]
+    raw_cast = (data.get("credits") or {}).get("cast", [])[:9]
+    cast = [
+        {
+            "name": p.get("name"),
+            "character": p.get("character"),
+            "photo": image_url(p.get("profile_path"), "w185"),
+        }
+        for p in raw_cast
+    ]
+    crew = (data.get("credits") or {}).get("crew", [])
+    director = next((c.get("name") for c in crew if c.get("job") == "Director"), None)
+    trailers = [
+        {"key": v["key"], "name": v.get("name", "Trailer"), "type": v.get("type", "Trailer")}
+        for v in (data.get("videos") or {}).get("results", [])
+        if v.get("site") == "YouTube"
+    ][:6]
     similar = [get_tmdb().card(r) for r in (data.get("similar") or {}).get("results", [])[:12]]
+
+    # server picker (flystream.net pattern): every legal source for this title
+    sources: list[dict] = [{"kind": "local", "label": f"Perpustakaan — {f['title']}", "library_id": f["id"]} for f in local_files]
+    sources.append({"kind": "trailer", "label": "Trailer resmi", "key": trailer_key, "available": bool(trailer_key)})
+    sources.append({"kind": "providers", "label": "Tonton di layanan resmi", "providers": providers})
 
     return templates.TemplateResponse(
         request,
@@ -135,10 +176,17 @@ async def detail(request: Request, media_type: str, tmdb_id: int, conn: sqlite3.
             cast=cast,
             similar=similar,
             trailer_key=trailer_key,
+            trailers=trailers,
             providers=providers,
             local_files=local_files,
             in_watchlist=in_watchlist,
             resume=resume,
+            sources=sources,
+            tagline=data.get("tagline"),
+            director=director,
+            status=data.get("status"),
+            original_language=data.get("original_language"),
+            release_date=data.get("release_date") or data.get("first_air_date"),
         ),
     )
 
@@ -174,6 +222,34 @@ async def search(request: Request, q: str = "", conn: sqlite3.Connection = Depen
         request,
         "search.html",
         _ctx(request, conn, q=query, results=results, error=error, quote_results=quote_results),
+    )
+
+
+@router.get("/movies")
+async def movies_page(request: Request):
+    items: list[dict] = []
+    error = None
+    if get_tmdb().ready:
+        try:
+            items = [get_tmdb().card(r) for r in (await get_tmdb().popular_movies())[:24]]
+        except TmdbUnavailable as exc:
+            error = str(exc)
+    return templates.TemplateResponse(
+        request, "browse.html", _ctx(request, conn=None, title="Movies", items=items, error=error)
+    )
+
+
+@router.get("/tvshows")
+async def tvshows_page(request: Request):
+    items: list[dict] = []
+    error = None
+    if get_tmdb().ready:
+        try:
+            items = [get_tmdb().card(r) for r in (await get_tmdb().popular_tv())[:24]]
+        except TmdbUnavailable as exc:
+            error = str(exc)
+    return templates.TemplateResponse(
+        request, "browse.html", _ctx(request, conn=None, title="Serial TV", items=items, error=error)
     )
 
 

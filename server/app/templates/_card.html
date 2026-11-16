@@ -4,6 +4,9 @@
   {% else %}
     <div class="poster empty"><span>?</span></div>
   {% endif %}
+  {% if c.rating %}
+  <span class="rating-chip"><span class="star">★</span> {{ '%.1f' | format(c.rating) }}</span>
+  {% endif %}
   <p class="title">{{ c.title }}</p>
-  <p class="sub">{{ c.year }}{% if c.rating %} · ★ {{ '%.1f' | format(c.rating) }}{% endif %}</p>
+  <p class="sub">{{ c.year }}</p>
 </a>

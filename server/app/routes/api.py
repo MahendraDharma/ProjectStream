@@ -186,6 +186,15 @@ async def api_progress_get(media_type: str, tmdb_id: int, request: Request, conn
     return {"position": row["position"], "duration": row["duration"]}
 
 
+@router.post("/watched/{media_type}/{tmdb_id}")
+async def api_watched(media_type: str, tmdb_id: int, request: Request, conn: sqlite3.Connection = Depends(get_conn)):
+    """Mark a title as watched (the eye button on the detail page)."""
+    if media_type not in ("movie", "tv"):
+        raise HTTPException(422, "media_type must be movie or tv")
+    progress_put(conn, tmdb_id, media_type, 1, 1, _active_profile(request))
+    return {"ok": True, "watched": True}
+
+
 # --- watch minutes (Wrapped telemetry) ------------------------------------------
 
 
@@ -706,6 +715,44 @@ async def api_stream_local(library_id: int, request: Request, conn: sqlite3.Conn
         return file_response(path, request.headers.get("range"))
     except FileNotFoundError:
         raise HTTPException(410, "file no longer on disk") from None
+
+
+@router.get("/download/local/{library_id}")
+async def api_download_local(library_id: int, request: Request, conn: sqlite3.Connection = Depends(get_conn)):
+    """Attachment download of a library file (the legal analog of their downloads)."""
+    import os
+    from urllib.parse import quote
+
+    row = library_get(conn, library_id)
+    if row is None:
+        raise HTTPException(404, "library item not found")
+
+    path = row["path"]
+    if not os.path.isfile(path):
+        raise HTTPException(410, "file no longer on disk")
+
+    filename = quote(os.path.basename(path))
+    return StreamingResponse(
+        _iter_download(path),
+        media_type="application/octet-stream",
+        headers={
+            "Content-Disposition": f"attachment; filename*=UTF-8''{filename}",
+            "Content-Length": str(os.path.getsize(path)),
+        },
+    )
+
+
+async def _iter_download(path: str):
+    import os
+
+    remaining = os.path.getsize(path)
+    with open(path, "rb") as handle:
+        while remaining > 0:
+            chunk = handle.read(min(256 * 1024, remaining))
+            if not chunk:
+                break
+            remaining -= len(chunk)
+            yield chunk
 
 
 @router.get("/stream/trailer/{video_id}")

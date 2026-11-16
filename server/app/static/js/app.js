@@ -1,14 +1,35 @@
-/* ProjectStream front-end helpers:
-   - watchlist toggle, library rescan, progress saving
-   - live search dropdown (flystream.net parity)
-   - seal attestation + playback-search availability chip
-   - watch-minutes telemetry (Wrapped) and skip-intro markers */
+/* ProjectStream front-end helpers (flystream.net-style UI):
+   search overlay + live results, hero carousel, time chips, watchlist,
+   library rescan, progress + watch-minutes, skip-intro. */
 
-// --- live search dropdown -------------------------------------------------------
+// --- search overlay ------------------------------------------------------------
 
+const overlay = document.getElementById("search-overlay");
+const searchOpenBtn = document.getElementById("search-open");
 const liveInput = document.getElementById("live-search");
 const drop = document.getElementById("search-drop");
 let searchTimer = null;
+
+function openSearch() {
+  if (!overlay) return;
+  overlay.classList.add("open");
+  liveInput?.focus();
+}
+function closeSearch() {
+  overlay?.classList.remove("open");
+}
+searchOpenBtn?.addEventListener("click", openSearch);
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") closeSearch();
+});
+overlay?.addEventListener("click", (e) => {
+  if (e.target === overlay) closeSearch();
+});
+liveInput?.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && liveInput.value.trim()) {
+    window.location.href = `/search?q=${encodeURIComponent(liveInput.value.trim())}`;
+  }
+});
 
 if (liveInput && drop) {
   liveInput.addEventListener("input", () => {
@@ -16,7 +37,6 @@ if (liveInput && drop) {
     const q = liveInput.value.trim();
     if (q.length < 2) {
       drop.innerHTML = "";
-      drop.style.display = "none";
       return;
     }
     searchTimer = setTimeout(async () => {
@@ -29,69 +49,88 @@ if (liveInput && drop) {
         a.href = `/detail/${r.media_type}/${r.tmdb_id}`;
         a.className = "search-hit";
         a.textContent = `${r.title}${r.year ? " (" + r.year + ")" : ""}`;
+        a.addEventListener("click", closeSearch);
         drop.appendChild(a);
       });
-      drop.style.display = data.results && data.results.length ? "" : "none";
     }, 250);
   });
-
-  document.addEventListener("click", (e) => {
-    if (!drop.contains(e.target) && e.target !== liveInput) drop.style.display = "none";
-  });
 }
 
-// --- seal attestation + playback availability (detail page) -----------------------
+// --- hero carousel ---------------------------------------------------------------
 
-async function getClientId() {
-  let id = localStorage.getItem("fs_client_id");
-  if (!id) {
-    id = crypto.randomUUID();
-    localStorage.setItem("fs_client_id", id);
+const heroSection = document.getElementById("hero");
+if (heroSection) {
+  const featuredData = JSON.parse(document.getElementById("featured-data")?.textContent || "[]");
+  const dots = [...heroSection.querySelectorAll(".hero-dot")];
+  const slides = [...heroSection.querySelectorAll(".hero-slide")];
+  let current = 0;
+  let timer = null;
+
+  function show(index) {
+    current = index % slides.length;
+    slides.forEach((s, i) => (s.style.display = i === current ? "" : "none"));
+    dots.forEach((d, i) => d.classList.toggle("active", i === current));
+
+    const item = featuredData[current];
+    if (item) {
+      document.getElementById("hero-title").textContent = item.title;
+      document.getElementById("hero-rating").textContent = (item.rating ?? 0).toFixed(1);
+      document.getElementById("hero-year").textContent = item.year || "";
+      document.getElementById("hero-overview").textContent = item.overview || "";
+      document.getElementById("hero-play").href = `/detail/${item.media_type}/${item.tmdb_id}`;
+      document.getElementById("hero-info").href = `/detail/${item.media_type}/${item.tmdb_id}`;
+      const add = document.getElementById("hero-add");
+      add.dataset.mediaType = item.media_type;
+      add.dataset.tmdbId = item.tmdb_id;
+    }
   }
-  return id;
-}
 
-async function fetchSeal() {
-  const clientId = await getClientId();
-  const res = await fetch("/api/guard-attest", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ client_id: clientId }),
-  });
-  return res.json();
-}
+  function startAuto() {
+    timer = setInterval(() => show(current + 1), 7000);
+  }
+  dots.forEach((d) =>
+    d.addEventListener("click", () => {
+      clearInterval(timer);
+      show(Number(d.dataset.index));
+      startAuto();
+    })
+  );
+  if (slides.length) startAuto();
 
-// On detail pages: ask the server which legal sources exist (mirrors the
-// flystream.net playback-search flow including its error states).
-if (window.location.pathname.startsWith("/detail/")) {
-  const match = window.location.pathname.match(/\/detail\/(movie|tv)\/(\d+)/);
-  if (match) {
-    fetchSeal().then(({ seal }) => {
-      fetch("/api/playback-search", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "X-FS-Seal": seal },
-        body: JSON.stringify({ tmdb_id: Number(match[2]), media_type: match[1] }),
-      })
-        .then((r) => r.json())
-        .then((data) => {
-          const anchor = document.querySelector(".hero-info");
-          if (!anchor) return;
-          const chip = document.createElement("div");
-          chip.className = "source-chip";
-          if (data.status === "OK") {
-            chip.classList.add("ok");
-            chip.textContent = `✔ Tersedia di perpustakaan (${data.sources.length} sumber)`;
-          } else if (data.status === "SESSION_REBIND_REQUIRED") {
-            chip.textContent = "⟳ Sesi seal kedaluwarsa — muat ulang halaman";
-          } else {
-            chip.textContent = "Belum ada di perpustakaan — coba trailer / sumber legal di bawah";
-          }
-          anchor.prepend(chip);
-        })
-        .catch(() => {});
+  // hero "+" adds the visible item to the watchlist
+  document.getElementById("hero-add")?.addEventListener("click", async (e) => {
+    e.preventDefault();
+    const add = document.getElementById("hero-add");
+    await fetch("/api/watchlist", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tmdb_id: Number(add.dataset.tmdbId), media_type: add.dataset.mediaType }),
     });
-  }
+    add.textContent = "✓";
+  });
 }
+
+// --- time chips ("Got some time?") ------------------------------------------------
+
+document.querySelectorAll(".time-chip").forEach((chip) => {
+  chip.addEventListener("click", () => {
+    const mins = Number(chip.dataset.mins);
+    document.querySelectorAll(".time-chip").forEach((c) => c.classList.remove("active"));
+    chip.classList.add("active");
+
+    // filter library cards by the estimated duration heuristic (data-mins)
+    let anyVisible = false;
+    document.querySelectorAll(".card[data-mins]").forEach((card) => {
+      const show = Number(card.dataset.mins) <= mins;
+      card.style.display = show ? "" : "none";
+      anyVisible = anyVisible || show;
+    });
+    if (!anyVisible) {
+      const target = document.getElementById("archive-rail");
+      target?.scrollIntoView({ behavior: "smooth" });
+    }
+  });
+});
 
 // --- watchlist toggle ---------------------------------------------------------
 
@@ -102,7 +141,7 @@ document.querySelectorAll(".watchlist-toggle").forEach((btn) => {
 
     if (active) {
       await fetch(`/api/watchlist/${mediaType}/${tmdbId}`, { method: "DELETE" });
-      btn.textContent = "+ Watchlist";
+      btn.textContent = "＋";
       btn.dataset.active = "";
     } else {
       await fetch("/api/watchlist", {
@@ -110,7 +149,7 @@ document.querySelectorAll(".watchlist-toggle").forEach((btn) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ tmdb_id: Number(tmdbId), media_type: mediaType }),
       });
-      btn.textContent = "✓ Di Watchlist";
+      btn.textContent = "✓";
       btn.dataset.active = "1";
     }
   });
@@ -164,7 +203,6 @@ if (player && player.dataset.tmdbId) {
   player.addEventListener("pause", save);
   window.addEventListener("pagehide", save);
 
-  // watch-minutes: a delta ping every 30s feeds the Wrapped page
   let minutesAnchor = player.currentTime;
   const minutesTimer = setInterval(() => {
     const delta = Math.round(player.currentTime - minutesAnchor);
@@ -180,7 +218,6 @@ if (player && player.dataset.tmdbId) {
   }, 30000);
   window.addEventListener("pagehide", () => clearInterval(minutesTimer));
 
-  // skip-intro: per-title markers (flystream.net /api/intro?tmdb= flow)
   fetch(`/api/intro?tmdb=${tmdbId}&type=${mediaType}`)
     .then((r) => r.json())
     .then((marker) => {
@@ -189,8 +226,7 @@ if (player && player.dataset.tmdbId) {
       skip.style.display = "";
 
       player.addEventListener("timeupdate", () => {
-        const inWindow =
-          player.currentTime >= marker.start && player.currentTime <= marker.end;
+        const inWindow = player.currentTime >= marker.start && player.currentTime <= marker.end;
         skip.style.display = inWindow ? "" : "none";
       });
       skip.addEventListener("click", () => {

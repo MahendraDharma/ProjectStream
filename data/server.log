@@ -1,0 +1,121 @@
+INFO:     Started server process [79170]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8080 (Press CTRL+C to quit)
+INFO:     127.0.0.1:49302 - "GET /healthz HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://archive.org/advancedsearch.php?q=collection%3A%28feature_films%29+AND+mediatype%3A%28movies%29+AND+format%3A%28h.264%29&fl%5B%5D=identifier&fl%5B%5D=title&fl%5B%5D=year&rows=12&sort%5B%5D=downloads+desc&output=json "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:49303 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49310 - "GET /detail/movie/1368337 HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/Users/apple/ProjectStream/server/app/routes/pages.py", line 132, in detail
+    data = await get_tmdb().detail(tmdb_id, media_type)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/apple/ProjectStream/server/app/tmdb.py", line 106, in detail
+    return await self._get(
+           ^^^^^^^^^^^^^^^^
+    ...<2 lines>...
+    )
+    ^
+  File "/Users/apple/ProjectStream/server/app/tmdb.py", line 40, in _get
+    raise TmdbUnavailable("TMDB_API_KEY is not set")
+app.tmdb.TmdbUnavailable: TMDB_API_KEY is not set
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/apple/ProjectStream/.venv/lib/python3.15/site-packages/uvicorn/protocols/http/httptools_impl.py", line 422, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.scope, self.receive, self.send
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/apple/ProjectStream/.venv/lib/python3.15/site-packages/uvicorn/middleware/proxy_headers.py", line 63, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/apple/ProjectStream/.venv/lib/python3.15/site-packages/fastapi/applications.py", line 1194, in __call__
+    await super().__call__(scope, receive, send)
+  File "/Users/apple/ProjectStream/.venv/lib/python3.15/site-packages/starlette/applications.py", line 96, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/apple/ProjectStream/.venv/lib/python3.15/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/Users/apple/ProjectStream/.venv/lib/python3.15/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/Users/apple/ProjectStream/.venv/lib/python3.15/site-packages/fastapi/telemetry/_asgi.py", line 151, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/apple/ProjectStream/.venv/lib/python3.15/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/apple/ProjectStream/.venv/lib/python3.15/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/apple/ProjectStream/.venv/lib/python3.15/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/apple/ProjectStream/.venv/lib/python3.15/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/apple/ProjectStream/.venv/lib/python3.15/site-packages/starlette/routing.py", line 683, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/apple/ProjectStream/.venv/lib/python3.15/site-packages/fastapi/routing.py", line 2811, in app
+    await route.handle(scope, receive, send)
+  File "/Users/apple/ProjectStream/.venv/lib/python3.15/site-packages/fastapi/routing.py", line 1839, in handle
+    await self.original_router.handle(scope, receive, send)
+  File "/Users/apple/ProjectStream/.venv/lib/python3.15/site-packages/fastapi/routing.py", line 2894, in handle
+    await included_router._handle_selected(scope, receive, send)
+  File "/Users/apple/ProjectStream/.venv/lib/python3.15/site-packages/fastapi/routing.py", line 1865, in _handle_selected
+    await original_route.handle(scope, receive, send)
+  File "/Users/apple/ProjectStream/.venv/lib/python3.15/site-packages/fastapi/routing.py", line 1328, in handle
+    await effective_context.app(scope, receive, send)
+  File "/Users/apple/ProjectStream/.venv/lib/python3.15/site-packages/fastapi/routing.py", line 166, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/apple/ProjectStream/.venv/lib/python3.15/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/apple/ProjectStream/.venv/lib/python3.15/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/apple/ProjectStream/.venv/lib/python3.15/site-packages/fastapi/routing.py", line 152, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/Users/apple/ProjectStream/.venv/lib/python3.15/site-packages/fastapi/routing.py", line 745, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/Users/apple/ProjectStream/.venv/lib/python3.15/site-packages/fastapi/routing.py", line 372, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/apple/ProjectStream/server/app/routes/pages.py", line 134, in detail
+    return templates.TemplateResponse(request, "detail.html", _ctx(request, conn, unavailable=str(exc)), status_code=503)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/apple/ProjectStream/.venv/lib/python3.15/site-packages/starlette/templating.py", line 149, in TemplateResponse
+    return _TemplateResponse(
+        template,
+    ...<4 lines>...
+        background=background,
+    )
+  File "/Users/apple/ProjectStream/.venv/lib/python3.15/site-packages/starlette/templating.py", line 43, in __init__
+    content = template.render(context)
+  File "/Users/apple/ProjectStream/.venv/lib/python3.15/site-packages/jinja2/environment.py", line 1295, in render
+    self.environment.handle_exception()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/apple/ProjectStream/.venv/lib/python3.15/site-packages/jinja2/environment.py", line 942, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "/Users/apple/ProjectStream/server/app/templates/detail.html", line 1, in top-level template code
+    {% extends "base.html" %}
+  File "/Users/apple/ProjectStream/server/app/templates/base.html", line 7, in top-level template code
+    <title>{% block title %}ProjectStream{% endblock %}</title>
+    ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/apple/ProjectStream/server/app/templates/detail.html", line 2, in block 'title'
+    {% block title %}{{ item.title }} — ProjectStream{% endblock %}
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/apple/ProjectStream/.venv/lib/python3.15/site-packages/jinja2/environment.py", line 490, in getattr
+    return getattr(obj, attribute)
+jinja2.exceptions.UndefinedError: 'item' is undefined
+INFO:     127.0.0.1:49316 - "GET /detail/movie/1368337 HTTP/1.1" 503 Service Unavailable
+INFO:httpx:HTTP Request: GET https://archive.org/advancedsearch.php?q=collection%3A%28feature_films%29+AND+mediatype%3A%28movies%29+AND+format%3A%28h.264%29&fl%5B%5D=identifier&fl%5B%5D=title&fl%5B%5D=year&rows=12&sort%5B%5D=downloads+desc&output=json "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:49319 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49319 - "GET /static/css/app.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49321 - "GET /static/js/app.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49329 - "GET /static/icon.svg HTTP/1.1" 304 Not Modified
+INFO:httpx:HTTP Request: GET https://archive.org/advancedsearch.php?q=collection%3A%28feature_films%29+AND+mediatype%3A%28movies%29+AND+format%3A%28h.264%29&fl%5B%5D=identifier&fl%5B%5D=title&fl%5B%5D=year&rows=12&sort%5B%5D=downloads+desc&output=json "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:49341 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49341 - "GET /static/css/app.css HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:49343 - "GET /static/js/app.js HTTP/1.1" 304 Not Modified

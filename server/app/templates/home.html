@@ -3,7 +3,7 @@
 {% block content %}
 
 {% if tmdb_error or not tmdb_ready %}
-  <section class="notice">
+  <section class="notice" style="margin-top: 90px;">
     {% if not tmdb_ready %}
       <h2>Set dulu TMDB API key</h2>
       <p>Ambil key gratis di <a href="https://www.themoviedb.org/settings/api" rel="noopener">TMDB</a>,
@@ -16,44 +16,85 @@
   </section>
 {% endif %}
 
+{% if featured %}
+<section class="hero" id="hero">
+  {% for c in featured %}
+  <div class="hero-slide" data-index="{{ loop.index0 }}"
+       style="position:absolute; inset:0; background-size:cover; background-position:center 20%;
+              background-image: url('{{ c.backdrop | tmdb_img }}');
+              {{ 'display:none' if not loop.first }}">
+  </div>
+  {% endfor %}
+  <div class="hero-inner">
+    <h1 class="hero-title-art" id="hero-title">{{ featured[0].title }}</h1>
+    <p class="hero-meta">
+      <span class="star">★</span> <span id="hero-rating">{{ '%.1f' | format(featured[0].rating or 0) }}</span>
+      <span>·</span> <span id="hero-year">{{ featured[0].year }}</span>
+    </p>
+    <p class="hero-overview" id="hero-overview">{{ featured[0].overview if featured[0].overview is defined else '' }}</p>
+    <div class="hero-actions">
+      <a class="btn-play" id="hero-play" href="/detail/{{ featured[0].media_type }}/{{ featured[0].tmdb_id }}">▶ &nbsp;PLAY</a>
+      <a class="btn-circle" id="hero-add" href="#" title="Tambah ke watchlist">＋</a>
+      <a class="btn-circle" id="hero-info" href="/detail/{{ featured[0].media_type }}/{{ featured[0].tmdb_id }}" title="Info">ⓘ</a>
+    </div>
+  </div>
+  <div class="hero-dots">
+    {% for c in featured %}
+    <button class="hero-dot {{ 'active' if loop.first }}" data-index="{{ loop.index0 }}" aria-label="Featured {{ loop.index }}"></button>
+    {% endfor %}
+  </div>
+</section>
+
+<script id="featured-data" type="application/json">{{ featured | tojson }}</script>
+{% endif %}
+
 {% if continue_rows %}
-<section class="row-section">
-  <h2>Lanjut Tonton</h2>
-  <div class="grid continue">
+<section class="rail-section">
+  <div class="rail-head"><h2>Lanjut Tonton</h2></div>
+  <div class="rail">
     {% for row in continue_rows %}
     <a class="card progress-card" href="/detail/{{ row.media_type }}/{{ row.tmdb_id }}">
-      <div class="bar"><div class="fill" style="width: {{ (row.position / row.duration * 100) | round(0, 'floor') if row.duration else 0 }}%"></div></div>
-      <p>TMDB #{{ row.tmdb_id }} · {{ (row.position / 60) | round(0, 'floor') }} menit</p>
+      <div class="poster local"><span>▶</span></div>
+      <p class="title">TMDB #{{ row.tmdb_id }}</p>
+      <p class="sub">{{ (row.position / 60) | round(0, 'floor') }} / {{ (row.duration / 60) | round(0, 'floor') }} menit</p>
     </a>
     {% endfor %}
   </div>
 </section>
 {% endif %}
 
-{% for key, cards in rows.items() %}
-<section class="row-section">
-  <h2>{{ {
-    'trending': 'Sedang Trending',
-    'popular_movies': 'Film Populer',
-    'top_rated': 'Rating Tertinggi',
-    'popular_tv': 'Serial TV Populer',
-  }[key] }}</h2>
-  <div class="grid">
-    {% for c in cards %}
-      {% include '_card.html' %}
-    {% endfor %}
+{% for row in provider_rows %}
+<section class="rail-section">
+  <div class="rail-head"><h2>Hanya di <span class="brand-name">{{ row.label }}</span></h2></div>
+  <div class="rail">
+    {% for c in row.cards %}{% include '_card.html' %}{% endfor %}
+    <a class="more-card" href="/movies">More ›</a>
   </div>
 </section>
 {% endfor %}
 
-<section class="row-section" id="archive">
-  <h2>Film Public Domain <span class="tag">siap tonton</span></h2>
-  <div class="grid">
+{% for key, cards in rows.items() %}
+<section class="rail-section">
+  <div class="rail-head"><h2>{{ {
+    'trending': 'Sedang Trending',
+    'popular_movies': 'Film Populer',
+    'top_rated': 'Rating Tertinggi',
+    'popular_tv': 'Serial TV Populer',
+  }[key] }}</h2></div>
+  <div class="rail">
+    {% for c in cards %}{% include '_card.html' %}{% endfor %}
+    <a class="more-card" href="{{ '/movies' if key in ('popular_movies', 'top_rated') else '/tvshows' }}">More ›</a>
+  </div>
+</section>
+{% endfor %}
+
+<section class="rail-section" id="archive">
+  <div class="rail-head"><h2>Film Public Domain <span class="tag">siap tonton</span></h2></div>
+  <div class="rail" id="archive-rail">
     {% for f in archive_films %}
     <a class="card" href="/watch/archive/{{ f.identifier }}">
-      <div class="poster archive">
-        <span>▶</span>
-      </div>
+      <img class="poster" src="https://archive.org/services/img/{{ f.identifier }}" alt="{{ f.title }}" loading="lazy"
+           onerror="this.outerHTML='<div class=&quot;poster archive&quot;><span>▶</span></div>'">
       <p class="title">{{ f.title }}</p>
       <p class="sub">{{ f.year }}</p>
     </a>
@@ -62,14 +103,12 @@
 </section>
 
 {% if library %}
-<section class="row-section">
-  <h2>Dari Perpustakaan Anda</h2>
-  <div class="grid">
+<section class="rail-section">
+  <div class="rail-head"><h2>Dari Perpustakaan Anda</h2></div>
+  <div class="rail">
     {% for row in library[:12] %}
-    <a class="card" href="/watch/local/{{ row.id }}">
-      <div class="poster local">
-        <span>▶</span>
-      </div>
+    <a class="card" href="/watch/local/{{ row.id }}" data-mins="{{ (row.size_bytes / 60000000) | round(0, 'floor') }}">
+      <div class="poster local"><span>▶</span></div>
       <p class="title">{{ row.title }}</p>
       <p class="sub">{{ row.year or '' }}{% if row.season %} · S{{ '%02d' | format(row.season) }}E{{ '%02d' | format(row.episode) }}{% endif %}</p>
     </a>
@@ -78,4 +117,10 @@
 </section>
 {% endif %}
 
+<div class="time-chips" id="time-chips">
+  <span>Ada waktu?</span>
+  {% for label, mins in [('30 min', 30), ('45 min', 45), ('1 hr', 60), ('1h 30m', 90), ('2 hr', 120)] %}
+  <button class="time-chip" data-mins="{{ mins }}">{{ label }}</button>
+  {% endfor %}
+</div>
 {% endblock %}

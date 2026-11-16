@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} — ProjectStream{% endblock %}
+{% block content %}
+<h1 class="page-title">{{ title }}</h1>
+
+{% if error %}
+  <section class="notice"><p>{{ error }}</p></section>
+{% elif not items %}
+  <section class="notice"><p>Set dulu TMDB API key untuk mengisi katalog.</p></section>
+{% endif %}
+
+<div class="grid">
+  {% for c in items %}{% include '_card.html' %}{% endfor %}
+</div>
+{% endblock %}

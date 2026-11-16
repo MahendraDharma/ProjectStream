@@ -1,12 +1,14 @@
 {% extends "base.html" %}
 {% block title %}Cari{% if q %} “{{ q }}”{% endif %} — ProjectStream{% endblock %}
 {% block content %}
-<h1 class="page-title">Cari{% if q %} “{{ q }}”{% endif %}</h1>
+<h1 class="page-title">Hasil untuk “{{ q }}”</h1>
 
 {% if error %}
   <section class="notice"><p>{{ error }}</p></section>
 {% elif q and not results %}
-  <section class="notice"><p>Tidak ada hasil untuk “{{ q }}”.</p></section>
+  <section class="notice" style="text-align:center;">
+    <p>Tidak ada film, serial, atau orang yang cocok dengan “{{ q }}”. Coba kata kunci lain.</p>
+  </section>
 {% endif %}
 
 <div class="grid">
@@ -14,8 +16,8 @@
 </div>
 
 {% if quote_results %}
-<h2>Pencarian dialog (dari subtitle milik Anda)</h2>
-<div class="notice">
+<h2 class="section-title">Pencarian dialog (dari subtitle milik Anda)</h2>
+<div class="notice" style="margin-left: 40px;">
   <ul class="quote-results">
     {% for r in quote_results %}
     <li>

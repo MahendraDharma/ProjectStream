@@ -1,87 +1,145 @@
 {% extends "base.html" %}
-{% block title %}{{ item.title }} — ProjectStream{% endblock %}
+{% block title %}{{ item.title if item is defined else 'Detail' }} — ProjectStream{% endblock %}
 {% block head %}
+  {% if item is defined %}
   <meta property="og:type" content="{{ 'video.movie' if item.media_type == 'movie' else 'video.tv_series' }}">
   <meta property="og:site_name" content="ProjectStream">
   <meta property="og:title" content="{{ item.title }}{% if item.year %} ({{ item.year }}){% endif %} — ProjectStream">
   {% if overview %}<meta property="og:description" content="{{ overview[:200] }}">{% endif %}
   {% if item.poster %}<meta property="og:image" content="{{ item.poster | tmdb_img }}">{% endif %}
+  {% endif %}
 {% endblock %}
 {% block content %}
 
 {% if unavailable %}
-  <section class="notice"><h2>TMDB tidak tersedia</h2><p>{{ unavailable }}</p></section>
+  <section class="notice" style="margin-top: 100px;"><h2>TMDB tidak tersedia</h2><p>{{ unavailable }}</p></section>
 {% else %}
 
-<section class="hero" {% if item.backdrop %}style="--backdrop: url('{{ item.backdrop | tmdb_img }}')"{% endif %}>
-  <div class="hero-inner">
-    {% if item.poster %}<img class="hero-poster" src="{{ item.poster | tmdb_img }}" alt="{{ item.title }}">{% endif %}
-    <div class="hero-info">
-      <h1>{{ item.title }} <span class="year">{{ item.year }}</span></h1>
-      <p class="meta">
-        {{ {'movie': 'Film', 'tv': 'Serial TV'}[item.media_type] }}
-        {% if runtime %} · {{ runtime }} menit{% endif %}
-        {% if item.rating %} · ★ {{ '%.1f' | format(item.rating) }}{% endif %}
-        {% for g in genres %} · {{ g }}{% endfor %}
-      </p>
-      <p class="overview">{{ overview or 'Belum ada deskripsi.' }}</p>
+<section class="detail-hero" {% if item.backdrop %}style="background-image: url('{{ item.backdrop | tmdb_img }}')"{% endif %}>
+  <div class="detail-hero-inner">
+    <h1 class="detail-title-art">{{ item.title }}</h1>
+    {% if tagline %}<p class="detail-tagline">“{{ tagline }}”</p>{% endif %}
+    <p class="detail-genres">{{ genres | join(' • ') if genres else '' }}</p>
 
-      <div class="actions">
-        {% if local_files %}
-          <a class="btn primary" href="/watch/local/{{ local_files[0].id }}">▶ Putar dari Perpustakaan</a>
-        {% endif %}
-        {% if trailer_key %}
-          <a class="btn" href="/watch/trailer/{{ trailer_key }}">▶ Trailer</a>
-        {% endif %}
-        <button class="btn ghost watchlist-toggle" data-media-type="{{ item.media_type }}" data-tmdb-id="{{ item.tmdb_id }}" data-active="{{ '1' if in_watchlist else '' }}">
-          {{ '✓ Di Watchlist' if in_watchlist else '+ Watchlist' }}
-        </button>
-      </div>
-
-      {% if providers %}
-      <div class="providers">
-        <span>Tonton di:</span>
-        {% for p in providers %}<span class="provider">{{ p.name }}</span>{% endfor %}
-      </div>
+    <div class="detail-actions">
+      {% if local_files %}
+        <a class="btn-play" href="/watch/local/{{ local_files[0].id }}">▶ &nbsp;Play</a>
+      {% elif trailer_key %}
+        <a class="btn-play" href="/watch/trailer/{{ trailer_key }}">▶ &nbsp;Trailer</a>
+      {% else %}
+        <a class="btn-play" href="#servers">▶ &nbsp;Sumber</a>
       {% endif %}
-
-      {% if local_files and local_files | length > 1 %}
-      <div class="episodes">
-        <h3>Episode di perpustakaan Anda</h3>
-        <ul>
-        {% for f in local_files %}
-          <li><a href="/watch/local/{{ f.id }}">S{{ '%02d' | format(f.season) }}E{{ '%02d' | format(f.episode) }} — {{ f.title }}</a></li>
-        {% endfor %}
-        </ul>
-      </div>
+      <a class="btn-circle" href="/party" title="Watch party">👥</a>
+      <button class="btn-circle watchlist-toggle" data-media-type="{{ item.media_type }}" data-tmdb-id="{{ item.tmdb_id }}" data-active="{{ '1' if in_watchlist else '' }}" title="Watchlist">{{ '✓' if in_watchlist else '＋' }}</button>
+      <button class="btn-circle watched-btn" data-media-type="{{ item.media_type }}" data-tmdb-id="{{ item.tmdb_id }}" title="Tandai sudah ditonton">👁</button>
+      {% if local_files %}
+      <a class="btn-circle" href="/api/download/local/{{ local_files[0].id }}" title="Download (file milik Anda)">⬇</a>
       {% endif %}
     </div>
+
+    <div class="detail-meta">
+      <span>{{ item.year }}</span>
+      {% if runtime %}<span>· {{ runtime }}m</span>{% endif %}
+      {% if item.media_type == 'movie' %}<span class="cert-badge">MOVIE</span>{% else %}<span class="cert-badge">SERIES</span>{% endif %}
+      <span class="quality-badge">HD</span>
+      {% if item.rating %}<span>· <span style="color: var(--rating-gold)">★</span> {{ '%.1f' | format(item.rating) }}</span>{% endif %}
+    </div>
+
+    {% if director %}<p class="detail-director">Director: <strong>{{ director }}</strong></p>{% endif %}
+    <p class="detail-overview">{{ overview or 'Belum ada deskripsi.' }}</p>
+
+    <div class="ratings-row">
+      {% if item.rating %}<span class="imdb">TMDB</span> <strong>{{ '%.1f' | format(item.rating) }}</strong>/10{% endif %}
+      {% if item.rating %}<span>· {{ ((item.rating * 10) | round(0, 'floor')) }}% suka</span>{% endif %}
+    </div>
+  </div>
+
+  <div class="info-panel">
+    <div class="row"><span class="k">Status</span><span class="v">{{ {'Released': 'Released', 'Returning Series': 'Tayang berlanjut', 'Planned': 'Direncanakan', 'In Production': 'Diproduksi', 'Post Production': 'Pasca produksi'}.get(status, status or '—') }}</span></div>
+    <div class="row"><span class="k">Language</span><span class="v">{{ (original_language or '—') | upper }}</span></div>
+    <div class="row"><span class="k">Released</span><span class="v">{{ release_date or '—' }}</span></div>
+    <div class="row"><span class="k">Runtime</span><span class="v">{{ runtime }}m{% if runtime %} · <span id="ends-at">—</span>{% endif %}</span></div>
   </div>
 </section>
 
+{% if trailers %}
+<h2 class="section-title">Trailers</h2>
+<div class="trailers">
+  {% for t in trailers %}
+  <a class="trailer-card" href="/watch/trailer/{{ t.key }}">
+    <span>▶</span>
+    <span class="tname">{{ t.name }}</span>
+    <span class="duration">{{ t.type }}</span>
+  </a>
+  {% endfor %}
+</div>
+{% endif %}
+
+<h2 class="section-title" id="servers">Sumber Tontonan</h2>
+<div class="server-list">
+  {% for s in sources %}
+    {% if s.kind == 'local' %}
+      <a class="server-btn" href="/watch/local/{{ s.library_id }}">
+        <span class="left"><span>🖥</span> {{ s.label }}</span>
+        <span class="left"><span class="badge hd">HD</span><span class="status-ok">SIAP</span></span>
+      </a>
+    {% elif s.kind == 'trailer' %}
+      <a class="server-btn" href="{{ '/watch/trailer/' + s.key if s.available else '#' }}" {% if not s.available %}disabled{% endif %}>
+        <span class="left"><span>▶</span> {{ s.label }}</span>
+        <span class="left"><span class="badge">YT</span><span class="{{ 'status-ok' if s.available else 'status-off' }}">{{ 'SIAP' if s.available else 'TIDAK ADA' }}</span></span>
+      </a>
+    {% else %}
+      <a class="server-btn" href="#providers">
+        <span class="left"><span>📺</span> {{ s.label }}{% if s.providers %} — {{ s.providers | map(attribute='name') | join(', ') }}{% endif %}</span>
+        <span class="left"><span class="badge">RESMI</span><span class="status-ok">{{ s.providers | length }} layanan</span></span>
+      </a>
+    {% endif %}
+  {% endfor %}
+</div>
+
+{% if providers %}
+<h2 class="section-title" id="providers">Tonton di layanan resmi</h2>
+<div class="notice" style="margin-left: 40px;">
+  {% for p in providers %}<span class="tag">{{ p.name }}</span> {% endfor %}
+  <p class="page-sub" style="margin-top: 10px;">Tautan ke layanan resmi (Netflix, Prime, dan lainnya) sesuai wilayah dari TMDB.</p>
+</div>
+{% endif %}
+
+{% if local_files and local_files | length > 1 %}
+<h2 class="section-title">Episode di perpustakaan Anda</h2>
+<ul class="server-list">
+  {% for f in local_files %}
+  <li><a class="server-btn" href="/watch/local/{{ f.id }}"><span class="left">S{{ '%02d' | format(f.season) }}E{{ '%02d' | format(f.episode) }} — {{ f.title }}</span></a></li>
+  {% endfor %}
+</ul>
+{% endif %}
+
 {% if cast %}
-<section class="row-section">
-  <h2>Pemain</h2>
-  <div class="cast">
-    {% for person in cast %}
-    <div class="cast-card">
+<h2 class="section-title">Pemain</h2>
+<div class="cast-grid">
+  {% for person in cast %}
+  <div class="cast-card">
+    {% if person.photo %}
+      <img class="avatar" src="{{ person.photo | tmdb_img }}" alt="{{ person.name }}" loading="lazy">
+    {% else %}
       <div class="avatar">{{ person.name[0] }}</div>
+    {% endif %}
+    <div>
       <p>{{ person.name }}</p>
       <p class="role">{{ person.character }}</p>
     </div>
-    {% endfor %}
   </div>
-</section>
+  {% endfor %}
+</div>
 {% endif %}
 
 {% if similar %}
-<section class="row-section">
-  <h2>Mirip</h2>
-  <div class="grid">
-    {% for c in similar %}{% include '_card.html' %}{% endfor %}
-  </div>
-</section>
+<h2 class="section-title">You may like</h2>
+<div class="rail" style="margin: 0 40px;">
+  {% for c in similar %}{% include '_card.html' %}{% endfor %}
+</div>
 {% endif %}
 
 {% endif %}
 {% endblock %}
+{% block scripts %}<script src="/static/js/detail.js"></script>{% endblock %}

@@ -254,5 +254,5 @@ def test_party_peek_unknown(client):
 
 
 def test_parity_pages_render(client):
-    for path in ("/profiles", "/party", "/tv", "/remote", "/calendar", "/wrapped"):
+    for path in ("/profiles", "/party", "/tv", "/remote", "/calendar", "/wrapped", "/movies", "/tvshows"):
         assert client.get(path).status_code == 200, path
