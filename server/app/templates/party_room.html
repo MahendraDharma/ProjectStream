@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Party {{ code }} — ProjectStream{% endblock %}
+{% block content %}
+<h1 class="page-title">Party <span class="tag">{{ code }}</span> <span id="party-role" class="tag">…</span></h1>
+
+<div class="party-grid">
+  <div>
+    <video id="party-player" controls playsinline></video>
+    <p class="page-sub" id="party-now">Belum ada yang diputar.</p>
+    <div class="actions party-host-controls" style="display:none">
+      <label>Pilih dari perpustakaan:
+        <select id="party-pick"></select>
+      </label>
+      <button class="btn primary" id="party-load">Putar di party</button>
+    </div>
+  </div>
+  <div class="party-chat">
+    <div class="chat-log" id="chat-log"></div>
+    <div class="chat-input">
+      <input id="chat-text" placeholder="Kirim pesan…" maxlength="200">
+      <button class="btn small" id="chat-send">Kirim</button>
+    </div>
+    <div class="emoji-bar">
+      {% for e in ['😂','❤️','🔥','👏','😱','🤯'] %}
+      <button class="btn small emoji-btn" data-emoji="{{ e }}">{{ e }}</button>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="notice"><p><strong>Kode party:</strong> <code>{{ code }}</code> — bagikan ke teman agar bergabung di halaman Watch Party. Host yang mengontrol; jika host keluar, host baru otomatis dipromosikan.</p></div>
+{% endblock %}
+{% block scripts %}<script src="/static/js/party-room.js"></script>{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Mode TV — ProjectStream{% endblock %}
+{% block content %}
+<div class="tv-wrap">
+  <div id="tv-step-code">
+    <h1 class="page-title">Mode TV</h1>
+    <p class="page-sub">Buka halaman ini di browser TV (Fire TV / Apple TV browser / laptop di TV). Lalu buka <a href="/remote">Remote</a> di ponsel dan masukkan kode.</p>
+    <div class="tv-code" id="tv-code">— — — —</div>
+    <p id="tv-status">Menghubungkan…</p>
+  </div>
+
+  <div id="tv-step-player" style="display:none">
+    <video id="tv-player" controls playsinline></video>
+    <h2 id="tv-title" class="player-title">Menunggu perintah dari remote…</h2>
+  </div>
+
+  <div class="tv-picker">
+    <h3>Atau pilih langsung dari perpustakaan (klik di TV):</h3>
+    <div class="grid">
+      {% for row in library[:24] %}
+      <a class="card tv-direct" href="/watch/local/{{ row.id }}">
+        <div class="poster local"><span>▶</span></div>
+        <p class="title">{{ row.title }}</p>
+        <p class="sub">{{ row.year or '' }}</p>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}<script src="/static/js/tv.js"></script>{% endblock %}

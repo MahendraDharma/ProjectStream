@@ -109,14 +109,29 @@ public domain dari Internet Archive. Tidak mengagregasi sumber bajakan.
 3. `docker compose up -d` → buka `http://victus:8081/masuk?k=<PS_KEY>` sekali per perangkat.
 4. Tombol **Pindai Ulang** di halaman Perpustakaan untuk memetakan file ke TMDB.
 
-## Roadmap ideas
+## Functional parity with flystream.net (learning build)
 
-- Watch parties (synced playback between devices) — flystream.net runs this over REST +
-  `/api/party/ws` WebSocket; a polling MVP then WS is the suggested path
-- Subtitle support (external `.srt` per file)
-- People pages (actor filmography)
-- year-in-review "Wrapped" page — the watch-progress data is already in SQLite
-- Transcoding (ffmpeg) for non-browser-friendly codecs (mkv)
+ProjectStream now implements the flystream.net feature map (dissected with REA — see
+`~/Documents/rea-flystream/LAPORAN-BEDAH-FLYSTREAM.md`) with legal sources only:
+
+| flystream.net | ProjectStream | Status |
+|---|---|---|
+| Watch party: `/api/party/*` REST + `/api/party/ws` WS (play/pause/seek/sync/chat/gif), host promotion | `/api/party/create|join|leave|peek` + `/api/party/ws` (chat + emoji reactions instead of GIF service) | ✅ |
+| TV pairing + remote: `/api/tv-pair`, `remote/claim`, WS relay | `/api/tv-pair`, `/api/tv/claim`, `/api/tv/ws` (screen/controller roles), `/tv` + `/remote` pages | ✅ |
+| Seal attestation: `/api/guard-attest` + `X-FS-Seal` on sensitive calls | HMAC seal (10 min TTL) gating `/api/playback-search`; error states `NO_STREAM_LOOKUP_ID` / `SESSION_REBIND_REQUIRED` / `STREAM_UNAVAILABLE` | ✅ |
+| Source resolution server-side (`/api/playback-search`) | Same shape; resolves **your library only** — piracy sources intentionally not replicated | ✅ (legal) |
+| Profiles: avatars, lock, per-profile data | `/profiles` + `/api/profiles` (emoji avatars, optional PIN, per-profile watchlist/progress via `ps_profile` cookie) | ✅ |
+| Wrapped (watch-minutes telemetry) | `/api/watch-minutes` + `/wrapped` page (top titles, 30-day bars) | ✅ |
+| Quote search | `/api/quote-search` indexing your own `.srt` files found next to library videos | ✅ |
+| Calendar / "Leaks" | `/calendar` = TMDB upcoming + on-the-air (legal equivalent) | ✅ |
+| Intro skip (`/api/intro?tmdb=`) | `/api/intro` markers + "Lewati Intro" button in the player | ✅ |
+| Announcements, `/api/health` | `announcement.json` banner + `/api/status` (uptime, db size) + client latency | ✅ |
+| Live search | navbar dropdown via `/api/search` | ✅ |
+| PWA + TV mode + i18n | manifest/icon ✅; 10-foot TV layout on `/tv` ✅; i18n client-side = roadmap | ⚠️ sebagian |
+| Downloads ber-passkey, vault terenkripsi, edge buckets, ads, Discord widget | tidak diimplementasikan — butuh WebAuthn/Redis/multi-region atau tidak relevan (non-komersial) | ❌ roadmap |
+
+Party & TV state live in-process (single uvicorn worker) — a Redis store would be the next step
+for multi-worker deployments.
 
 ## Lessons applied from dissecting flystream.net (REA, 2026-11-17)
 

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Kalender Rilis — ProjectStream{% endblock %}
+{% block content %}
+<h1 class="page-title">Kalender Rilis</h1>
+<p class="page-sub">Rilis mendatang dari TMDB — versi legal dari bagian "Leaks"/kalender FlyStream. Trailer bisa diputar bila tersedia.</p>
+
+{% if error %}<section class="notice"><p>{{ error }}</p></section>{% endif %}
+
+<h2>Film segera tayang</h2>
+<div class="grid">
+  {% for c in upcoming %}{% include '_card.html' %}{% endfor %}
+</div>
+
+<h2>Serial yang sedang tayang</h2>
+<div class="grid">
+  {% for c in on_air %}{% include '_card.html' %}{% endfor %}
+</div>
+{% endblock %}

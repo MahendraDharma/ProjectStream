@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Watch Party — ProjectStream{% endblock %}
+{% block content %}
+<h1 class="page-title">Watch Party</h1>
+<p class="page-sub">Nonton serentak: satu orang jadi host (mengontrol putar/jeda/seek), yang lain mengikuti. Sinks via WebSocket — seperti FlyStream party, dengan sumber legal.</p>
+
+<div class="party-setup">
+  <div class="notice">
+    <h2>Buat party baru</h2>
+    <p><input id="party-name" placeholder="Nama kamu (sebagai host)" maxlength="24"></p>
+    <button class="btn primary" id="party-create">Buat Party</button>
+  </div>
+  <div class="notice">
+    <h2>Gabung dengan kode</h2>
+    <p><input id="party-code" placeholder="KODE6" maxlength="6" style="text-transform:uppercase; font-size:20px; letter-spacing:4px"></p>
+    <button class="btn" id="party-join">Gabung</button>
+  </div>
+</div>
+
+{% if missing_code is defined and missing_code %}
+<section class="notice"><p>Party <strong>{{ missing_code }}</strong> tidak ditemukan (mungkin sudah ditutup).</p></section>
+{% endif %}
+{% endblock %}
+{% block scripts %}<script src="/static/js/party-setup.js"></script>{% endblock %}

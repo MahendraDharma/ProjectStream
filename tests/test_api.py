@@ -132,7 +132,7 @@ def test_home_page_renders_without_tmdb(client):
 def test_library_rescan_empty_dirs(client):
     response = client.post("/api/library/rescan")
     assert response.status_code == 200
-    assert response.json() == {"ok": True, "scanned": 0, "matched": 0, "pruned": 0}
+    assert response.json() == {"ok": True, "scanned": 0, "matched": 0, "pruned": 0, "subtitle_lines": 0}
 
 
 def test_tmdb_image_rejects_foreign_url(client):

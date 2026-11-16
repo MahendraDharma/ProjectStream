@@ -12,4 +12,18 @@
 <div class="grid">
   {% for c in results %}{% include '_card.html' %}{% endfor %}
 </div>
+
+{% if quote_results %}
+<h2>Pencarian dialog (dari subtitle milik Anda)</h2>
+<div class="notice">
+  <ul class="quote-results">
+    {% for r in quote_results %}
+    <li>
+      <a href="{{ r.watch_url }}">▶ {{ r.title }}{% if r.season %} S{{ '%02d' | format(r.season) }}E{{ '%02d' | format(r.episode) }}{% endif %}</a>
+      @ {{ '%02d:%02d' | format((r.start / 60) | round(0, 'floor'), (r.start % 60) | round(0)) }} — “{{ r.text }}”
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
 {% endblock %}

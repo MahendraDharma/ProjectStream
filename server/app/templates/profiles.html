@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Profil — ProjectStream{% endblock %}
+{% block content %}
+<h1 class="page-title">Siapa yang menonton?</h1>
+
+<div class="profiles-grid">
+  {% for p in profiles %}
+  <button class="profile-card {{ 'locked' if p.has_pin else '' }}" data-id="{{ p.id }}" data-name="{{ p.name }}" data-pin="{{ '1' if p.has_pin else '' }}">
+    <div class="profile-avatar">{{ p.avatar }}</div>
+    <p>{{ p.name }}{% if p.id == active_id %} <span class="tag">aktif</span>{% endif %}</p>
+  </button>
+  {% endfor %}
+  <button class="profile-card add" id="add-profile-btn"><div class="profile-avatar">＋</div><p>Profil Baru</p></button>
+</div>
+
+<div id="pin-dialog" class="notice" style="display:none">
+  <h2>Profil terkunci</h2>
+  <p>Masukkan PIN untuk <strong id="pin-name"></strong>:</p>
+  <input id="pin-input" type="password" inputmode="numeric" maxlength="6" placeholder="••••" style="font-size:22px; width:120px; text-align:center">
+  <button class="btn primary" id="pin-submit">Buka</button>
+  <span id="pin-error" style="color:#ff6b6b"></span>
+</div>
+
+<div id="new-profile-dialog" class="notice" style="display:none">
+  <h2>Profil baru</h2>
+  <p><input id="np-name" placeholder="Nama" maxlength="24"></p>
+  <p>Avatar:
+    <select id="np-avatar">
+      <option>🎬</option><option>🍿</option><option>🦊</option><option>🐼</option><option>🐙</option>
+      <option>🤖</option><option>👻</option><option>🦁</option><option>🐸</option><option>🚀</option>
+    </select>
+  </p>
+  <p>PIN opsional (4–6 digit): <input id="np-pin" type="password" inputmode="numeric" maxlength="6" placeholder="kosong = tanpa PIN"></p>
+  <button class="btn primary" id="np-create">Buat Profil</button>
+</div>
+
+<p class="page-sub">Profil aktif menentukan watchlist, riwayat, dan Wrapped Anda (cookie <code>ps_profile</code>).</p>
+{% endblock %}
+{% block scripts %}<script src="/static/js/profiles.js"></script>{% endblock %}

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Remote — ProjectStream{% endblock %}
+{% block content %}
+<h1 class="page-title">Remote</h1>
+<p class="page-sub">Kendalikan TV yang sudah membuka <a href="/tv">Mode TV</a>. Masukkan 4-digit kode yang tampil di layar TV.</p>
+
+<div class="notice" id="remote-connect">
+  <input id="remote-code" placeholder="0000" maxlength="4" inputmode="numeric" style="font-size:24px; letter-spacing:6px; text-align:center">
+  <button class="btn primary" id="remote-claim">Hubungkan</button>
+  <span id="remote-status"></span>
+</div>
+
+<div id="remote-pad" style="display:none">
+  <h2>Terhubung: <span id="remote-device"></span></h2>
+  <div class="remote-grid">
+    <button class="btn remote-btn" data-cmd="load">⏏ Pilih file…</button>
+    <button class="btn remote-btn" data-cmd="play">▶ Putar</button>
+    <button class="btn remote-btn" data-cmd="pause">⏸ Jeda</button>
+    <button class="btn remote-btn" data-cmd="seek-back">⏪ −30 dtk</button>
+    <button class="btn remote-btn" data-cmd="seek-fwd">⏩ +30 dtk</button>
+  </div>
+  <div class="notice" id="remote-file-picker" style="display:none">
+    <h3>Putar di TV:</h3>
+    <div id="remote-files"><em>Memuat perpustakaan…</em></div>
+  </div>
+  <p class="page-sub" id="remote-state"></p>
+</div>
+{% endblock %}
+{% block scripts %}<script src="/static/js/remote.js"></script>{% endblock %}

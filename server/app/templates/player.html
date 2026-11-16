@@ -9,6 +9,7 @@
   <video id="player" controls autoplay playsinline
          src="{{ src }}{% if resume_to and resume_to > 10 %}#t={{ resume_to | int }}{% endif %}"
          {% if tmdb_id %}data-tmdb-id="{{ tmdb_id }}" data-media-type="{{ media_type }}"{% endif %}></video>
+  <button id="skip-intro" class="btn primary" style="display:none">Lewati Intro</button>
   {% else %}
   <section class="notice"><p>Stream ini tidak tersedia.</p></section>
   {% endif %}

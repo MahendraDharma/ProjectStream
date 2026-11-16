@@ -14,17 +14,27 @@
 <body>
   <nav class="nav">
     <a class="brand" href="/">Project<span>Stream</span></a>
-    <form class="nav-search" action="/search" method="get">
-      <input type="search" name="q" placeholder="Cari film, serial..." value="{{ q or '' }}" autocomplete="off">
+    <form class="nav-search" action="/search" method="get" autocomplete="off">
+      <input type="search" name="q" id="live-search" placeholder="Cari film, serial, dialog..." value="{{ q or '' }}" autocomplete="off">
+      <div class="search-drop" id="search-drop"></div>
     </form>
     <div class="nav-links">
       <a href="/" class="{{ 'active' if active == 'home' else '' }}">Beranda</a>
+      <a href="/calendar">Kalender</a>
+      <a href="/party">Party</a>
       <a href="/watchlist" class="{{ 'active' if active == 'watchlist' else '' }}">Watchlist</a>
       <a href="/library" class="{{ 'active' if active == 'library' else '' }}">Perpustakaan</a>
+      <a href="/wrapped">Wrapped</a>
+      <a href="/profiles" id="nav-profile">{{ '👤 ' + profile_name if profile_name else 'Profil' }}</a>
     </div>
   </nav>
 
   <main>
+    {% if announcement is defined and announcement.active %}
+    <div class="announce-bar">
+      {{ announcement.text }}{% if announcement.url %} — <a href="{{ announcement.url }}">{{ announcement.url }}</a>{% endif %}
+    </div>
+    {% endif %}
     {% block content %}{% endblock %}
   </main>
 
@@ -35,5 +45,6 @@
   </footer>
 
   <script src="/static/js/app.js"></script>
+  {% block scripts %}{% endblock %}
 </body>
 </html>

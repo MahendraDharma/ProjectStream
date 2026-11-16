@@ -69,6 +69,12 @@ class TmdbClient:
     async def popular_tv(self) -> list[dict[str, Any]]:
         return (await self._get("/tv/popular")).get("results", [])
 
+    async def upcoming_movies(self) -> list[dict[str, Any]]:
+        return (await self._get("/movie/upcoming")).get("results", [])
+
+    async def on_the_air_tv(self) -> list[dict[str, Any]]:
+        return (await self._get("/tv/on_the_air")).get("results", [])
+
     async def search(self, query: str) -> list[dict[str, Any]]:
         if not query.strip():
             return []

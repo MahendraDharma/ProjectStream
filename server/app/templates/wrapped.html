@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Wrapped — ProjectStream{% endblock %}
+{% block content %}
+<h1 class="page-title">Wrapped</h1>
+<p class="page-sub">Ringkasan menonton dari telemetri watch-minutes — versi legal kami dari fitur "Wrapped" FlyStream.</p>
+
+<div class="wrapped-hero notice">
+  <h2><span class="wrapped-hours">{{ hours }}</span> jam ditonton</h2>
+  <p>{{ stats.sessions }} sesi tonton tercatat.</p>
+</div>
+
+{% if top %}
+<h2>Judul teratas</h2>
+<div class="grid">
+  {% for c in top %}
+  <a class="card" href="/detail/{{ c.media_type }}/{{ c.tmdb_id }}">
+    {% if c.poster %}<img class="poster" src="{{ c.poster | tmdb_img }}" alt="{{ c.title }}" loading="lazy">{% else %}<div class="poster empty"><span>?</span></div>{% endif %}
+    <p class="title">{{ c.title }}</p>
+    <p class="sub">{{ c.minutes }} menit</p>
+  </a>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if stats.by_day %}
+<h2>Aktivitas 30 hari terakhir</h2>
+<div class="day-bars">
+  {% for d in stats.by_day %}
+  <div class="day-bar" title="{{ d.day }}: {{ d.minutes }} menit">
+    <div class="fill" style="height: {{ (d.minutes / (stats.by_day | map(attribute='minutes') | max) * 100) | round(0, 'floor') if stats.by_day | map(attribute='minutes') | max > 0 else 0 }}%"></div>
+    <span>{{ d.day[8:] }}/{{ d.day[5:7] }}</span>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if stats.sessions == 0 %}
+<section class="notice"><p>Belum ada data. Data terkumpul otomatis saat Anda menonton (diposting setiap ±30 detik dari player).</p></section>
+{% endif %}
+{% endblock %}
