@@ -35,6 +35,15 @@ CREATE TABLE IF NOT EXISTS progress (
     updated_at TEXT NOT NULL DEFAULT (datetime('now')),
     UNIQUE (tmdb_id, media_type)
 );
+
+CREATE TABLE IF NOT EXISTS playback_errors (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    tmdb_id    INTEGER,
+    media_type TEXT CHECK (media_type IN ('movie', 'tv') OR media_type IS NULL),
+    src_kind   TEXT NOT NULL DEFAULT 'unknown',
+    message    TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
 """
 
 
@@ -126,6 +135,30 @@ def progress_get(conn: sqlite3.Connection, tmdb_id: int, media_type: str) -> sql
 def progress_all(conn: sqlite3.Connection) -> list[sqlite3.Row]:
     return conn.execute(
         "SELECT * FROM progress WHERE duration > 0 AND position > 1 ORDER BY updated_at DESC LIMIT 20"
+    ).fetchall()
+
+
+# --- playback error reports ----------------------------------------------------
+
+
+def playback_error_add(
+    conn: sqlite3.Connection,
+    *,
+    media_type: str | None,
+    tmdb_id: int | None,
+    src_kind: str,
+    message: str,
+) -> None:
+    conn.execute(
+        "INSERT INTO playback_errors (tmdb_id, media_type, src_kind, message) VALUES (?, ?, ?, ?)",
+        (tmdb_id, media_type, src_kind, message),
+    )
+    conn.commit()
+
+
+def playback_errors_all(conn: sqlite3.Connection, limit: int = 50) -> list[sqlite3.Row]:
+    return conn.execute(
+        "SELECT * FROM playback_errors ORDER BY created_at DESC LIMIT ?", (limit,)
     ).fetchall()
 
 

@@ -22,6 +22,16 @@ def get_templates() -> Jinja2Templates:
     global _templates
     if _templates is None:
         _templates = Jinja2Templates(directory=str(templates_dir()))
+
+        def tmdb_img(url: str | None) -> str | None:
+            """Route TMDB artwork through the server-side proxy (flystream.net lesson)."""
+            from urllib.parse import quote
+
+            if url and url.startswith("https://image.tmdb.org/t/p/"):
+                return "/api/tmdb-image?url=" + quote(url, safe="")
+            return url
+
+        _templates.env.filters["tmdb_img"] = tmdb_img
     return _templates
 
 

@@ -3,8 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#4f8cff">
   <title>{% block title %}ProjectStream{% endblock %}</title>
+  <link rel="icon" type="image/svg+xml" href="/static/icon.svg">
+  <link rel="apple-touch-icon" href="/static/icon.svg">
+  <link rel="manifest" href="/static/site.webmanifest">
   <link rel="stylesheet" href="/static/css/app.css">
+  {% block head %}{% endblock %}
 </head>
 <body>
   <nav class="nav">

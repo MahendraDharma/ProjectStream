@@ -111,11 +111,25 @@ public domain dari Internet Archive. Tidak mengagregasi sumber bajakan.
 
 ## Roadmap ideas
 
-- Watch parties (synced playback between devices)
+- Watch parties (synced playback between devices) — flystream.net runs this over REST +
+  `/api/party/ws` WebSocket; a polling MVP then WS is the suggested path
 - Subtitle support (external `.srt` per file)
 - People pages (actor filmography)
-- year-in-review "Wrapped" page
+- year-in-review "Wrapped" page — the watch-progress data is already in SQLite
 - Transcoding (ffmpeg) for non-browser-friendly codecs (mkv)
+
+## Lessons applied from dissecting flystream.net (REA, 2026-11-17)
+
+A full architecture dissection of flystream.net (see `~/Documents/rea-flystream/LAPORAN-BEDAH-FLYSTREAM.md`)
+informed these changes, applied to ProjectStream where they fit a legal, single-server app:
+
+- **`/api/tmdb-image` proxy** — TMDB artwork is streamed through the server behind a strict
+  allowlist (flystream.net proxies `/api/tmdb-image` + `/api/anime-image` the same way), so the
+  browser never talks to `image.tmdb.org` directly.
+- **PWA manifest + theme-color + SVG icon** — installable like flystream.net.
+- **`POST /api/playback-error-report`** — client playback failures land in SQLite for ops
+  (mirrors their playback-error pipeline).
+- **OpenGraph meta on detail pages** — proper share cards like their SSR SEO templates.
 
 ## License
 

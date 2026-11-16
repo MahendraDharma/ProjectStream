@@ -1,0 +1,19 @@
+{
+  "name": "ProjectStream",
+  "short_name": "ProjectStream",
+  "description": "Aplikasi streaming film & TV pribadi: katalog TMDB, perpustakaan sendiri, trailer, dan film public domain.",
+  "start_url": "/",
+  "id": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0b0d12",
+  "theme_color": "#4f8cff",
+  "icons": [
+    {
+      "src": "/static/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

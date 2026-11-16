@@ -133,3 +133,72 @@ def test_library_rescan_empty_dirs(client):
     response = client.post("/api/library/rescan")
     assert response.status_code == 200
     assert response.json() == {"ok": True, "scanned": 0, "matched": 0, "pruned": 0}
+
+
+def test_tmdb_image_rejects_foreign_url(client):
+    response = client.get("/api/tmdb-image", params={"url": "https://evil.example.com/p/w342/x.jpg"})
+    assert response.status_code == 400
+
+
+def test_tmdb_image_rejects_missing_url(client):
+    # FastAPI's native query validation rejects a missing required param with 422.
+    response = client.get("/api/tmdb-image")
+    assert response.status_code == 422
+
+
+def test_tmdb_image_rejects_wrong_size(client):
+    response = client.get("/api/tmdb-image", params={"url": "https://image.tmdb.org/t/p/w666/x.jpg"})
+    assert response.status_code == 400
+
+
+def test_tmdb_image_proxies_tmdb_url(client, monkeypatch):
+    import httpx
+
+    import app.routes.api as api_module
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.host == "image.tmdb.org"
+        return httpx.Response(200, content=b"IMGDATA", headers={"content-type": "image/jpeg"})
+
+    monkeypatch.setattr(api_module, "_image_http", httpx.AsyncClient(transport=httpx.MockTransport(handler)))
+
+    response = client.get("/api/tmdb-image", params={"url": "https://image.tmdb.org/t/p/w342/abc.jpg"})
+    assert response.status_code == 200
+    assert response.content == b"IMGDATA"
+    assert response.headers["content-type"].startswith("image/")
+    assert response.headers["cache-control"].startswith("public")
+
+
+def test_playback_error_report_roundtrip(client):
+    response = client.post(
+        "/api/playback-error-report",
+        json={"tmdb_id": 5, "media_type": "movie", "src_kind": "local", "message": "file gone"},
+    )
+    assert response.status_code == 200
+    assert response.json() == {"ok": True}
+
+    from app.config import get_settings
+    from app.db import connect, playback_errors_all
+
+    conn = connect(get_settings().db_path)
+    rows = playback_errors_all(conn)
+    assert len(rows) == 1
+    assert rows[0]["tmdb_id"] == 5
+    assert rows[0]["src_kind"] == "local"
+    assert rows[0]["message"] == "file gone"
+
+
+def test_playback_error_report_allows_partial_payload(client):
+    response = client.post("/api/playback-error-report", json={"src_kind": "trailer", "message": "502"})
+    assert response.status_code == 200
+
+
+def test_playback_error_report_rejects_bad_media_type(client):
+    response = client.post("/api/playback-error-report", json={"media_type": "album", "message": "x"})
+    assert response.status_code == 422
+
+
+def test_pwa_manifest_served(client):
+    response = client.get("/static/site.webmanifest")
+    assert response.status_code == 200
+    assert "ProjectStream" in response.text

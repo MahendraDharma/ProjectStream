@@ -1,14 +1,21 @@
 {% extends "base.html" %}
 {% block title %}{{ item.title }} — ProjectStream{% endblock %}
+{% block head %}
+  <meta property="og:type" content="{{ 'video.movie' if item.media_type == 'movie' else 'video.tv_series' }}">
+  <meta property="og:site_name" content="ProjectStream">
+  <meta property="og:title" content="{{ item.title }}{% if item.year %} ({{ item.year }}){% endif %} — ProjectStream">
+  {% if overview %}<meta property="og:description" content="{{ overview[:200] }}">{% endif %}
+  {% if item.poster %}<meta property="og:image" content="{{ item.poster | tmdb_img }}">{% endif %}
+{% endblock %}
 {% block content %}
 
 {% if unavailable %}
   <section class="notice"><h2>TMDB tidak tersedia</h2><p>{{ unavailable }}</p></section>
 {% else %}
 
-<section class="hero" {% if item.backdrop %}style="--backdrop: url('{{ item.backdrop }}')"{% endif %}>
+<section class="hero" {% if item.backdrop %}style="--backdrop: url('{{ item.backdrop | tmdb_img }}')"{% endif %}>
   <div class="hero-inner">
-    {% if item.poster %}<img class="hero-poster" src="{{ item.poster }}" alt="{{ item.title }}">{% endif %}
+    {% if item.poster %}<img class="hero-poster" src="{{ item.poster | tmdb_img }}" alt="{{ item.title }}">{% endif %}
     <div class="hero-info">
       <h1>{{ item.title }} <span class="year">{{ item.year }}</span></h1>
       <p class="meta">

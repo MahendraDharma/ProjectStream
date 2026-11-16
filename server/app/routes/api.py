@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import logging
+import re
 import sqlite3
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse, StreamingResponse
 
@@ -13,6 +15,7 @@ from ..db import (
     library_get,
     library_prune,
     library_upsert,
+    playback_error_add,
     progress_all,
     progress_get,
     progress_put,
@@ -126,6 +129,61 @@ async def api_library_rescan(conn: sqlite3.Connection = Depends(get_conn)):
 
     pruned = library_prune(conn, {str(p) for p in files})
     return {"ok": True, "scanned": scanned, "matched": matched, "pruned": pruned}
+
+
+# --- image proxy (flystream.net lesson: third-party artwork never touches the browser) ---
+
+_IMAGE_ALLOW = re.compile(
+    r"^https://image\.tmdb\.org/t/p/(original|w92|w154|w185|w342|w500|w780|w1280)/[A-Za-z0-9_\-\.]+\.(?:jpg|jpeg|png|webp)$",
+)
+
+_image_http: httpx.AsyncClient | None = None
+
+
+def _image_client() -> httpx.AsyncClient:
+    global _image_http
+    if _image_http is None or _image_http.is_closed:
+        _image_http = httpx.AsyncClient(timeout=20, follow_redirects=False)
+    return _image_http
+
+
+@router.get("/tmdb-image")
+async def api_tmdb_image(url: str):
+    """Proxy TMDB artwork through this server with a strict allowlist."""
+    if not _IMAGE_ALLOW.match(url or ""):
+        raise HTTPException(400, "image URL not allowed")
+
+    try:
+        upstream = await _image_client().get(url)
+        upstream.raise_for_status()
+    except httpx.HTTPError as exc:
+        raise HTTPException(502, f"image upstream failed: {exc}") from exc
+
+    return StreamingResponse(
+        iter([upstream.content]),
+        media_type=upstream.headers.get("content-type", "image/jpeg"),
+        headers={"Cache-Control": "public, max-age=86400", "Accept-Ranges": "none"},
+    )
+
+
+# --- playback error report (flystream.net lesson: client-side failures feed ops) ---
+
+
+@router.post("/playback-error-report")
+async def api_playback_error_report(request: Request, conn: sqlite3.Connection = Depends(get_conn)):
+    body = await request.json()
+    media_type = body.get("media_type")
+    if media_type not in (None, "movie", "tv"):
+        raise HTTPException(422, "media_type must be movie, tv, or null")
+
+    playback_error_add(
+        conn,
+        media_type=media_type,
+        tmdb_id=int(body["tmdb_id"]) if body.get("tmdb_id") is not None else None,
+        src_kind=str(body.get("src_kind") or "unknown")[:40],
+        message=str(body.get("message") or "")[:500],
+    )
+    return {"ok": True}
 
 
 # --- streaming -----------------------------------------------------------------
