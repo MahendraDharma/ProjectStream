@@ -1,0 +1,36 @@
+services:
+  app:
+    build: .
+    container_name: projectstream
+    restart: unless-stopped
+    environment:
+      TMDB_API_KEY: ${TMDB_API_KEY:-}
+      TMDB_LANGUAGE: ${TMDB_LANGUAGE:-en-US}
+      TMDB_REGION: ${TMDB_REGION:-ID}
+      PM_LIBRARY_DIRS: ${PM_LIBRARY_DIRS:-/media/movies:/media/tv}
+      PM_DB_PATH: /data/projectstream.db
+      PM_CACHE_DIR: /cache
+      PM_COOKIES: ${PM_COOKIES:-}
+    volumes:
+      - ./data:/data
+      - ./cache:/cache
+      - ${MEDIA_ROOT:-./media}:/media:ro
+      - ${PM_COOKIES:-/dev/null}:/secrets/cookies.txt:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://127.0.0.1:8080/healthz', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  caddy:
+    image: caddy:2
+    container_name: projectstream-caddy
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "8081:8081"
+    environment:
+      PS_KEY: ${PS_KEY:-ganti-dengan-rahasia-panjang}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro

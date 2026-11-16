@@ -1,0 +1,9 @@
+<a class="card" href="/detail/{{ c.media_type }}/{{ c.tmdb_id }}">
+  {% if c.poster %}
+    <img class="poster" src="{{ c.poster }}" alt="{{ c.title }}" loading="lazy">
+  {% else %}
+    <div class="poster empty"><span>?</span></div>
+  {% endif %}
+  <p class="title">{{ c.title }}</p>
+  <p class="sub">{{ c.year }}{% if c.rating %} · ★ {{ '%.1f' | format(c.rating) }}{% endif %}</p>
+</a>

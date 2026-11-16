@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Watchlist — ProjectStream{% endblock %}
+{% block content %}
+<h1 class="page-title">Watchlist</h1>
+
+{% if not items %}
+  <section class="notice"><p>Watchlist kosong. Tambahkan dari halaman detail film/serial.</p></section>
+{% endif %}
+
+<div class="grid">
+  {% for c in items %}{% include '_card.html' %}{% endfor %}
+</div>
+{% endblock %}

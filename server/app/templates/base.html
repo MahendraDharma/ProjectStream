@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}ProjectStream{% endblock %}</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="/">Project<span>Stream</span></a>
+    <form class="nav-search" action="/search" method="get">
+      <input type="search" name="q" placeholder="Cari film, serial..." value="{{ q or '' }}" autocomplete="off">
+    </form>
+    <div class="nav-links">
+      <a href="/" class="{{ 'active' if active == 'home' else '' }}">Beranda</a>
+      <a href="/watchlist" class="{{ 'active' if active == 'watchlist' else '' }}">Watchlist</a>
+      <a href="/library" class="{{ 'active' if active == 'library' else '' }}">Perpustakaan</a>
+    </div>
+  </nav>
+
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="footer">
+    <p>ProjectStream — katalog &amp; metadata dari <a href="https://www.themoviedb.org" rel="noopener">TMDB</a>.
+       Film public domain dari <a href="https://archive.org" rel="noopener">Internet Archive</a>.
+       Pemutaran hanya dari sumber milik sendiri dan legal.</p>
+  </footer>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>

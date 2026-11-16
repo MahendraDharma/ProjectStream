@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Cari{% if q %} “{{ q }}”{% endif %} — ProjectStream{% endblock %}
+{% block content %}
+<h1 class="page-title">Cari{% if q %} “{{ q }}”{% endif %}</h1>
+
+{% if error %}
+  <section class="notice"><p>{{ error }}</p></section>
+{% elif q and not results %}
+  <section class="notice"><p>Tidak ada hasil untuk “{{ q }}”.</p></section>
+{% endif %}
+
+<div class="grid">
+  {% for c in results %}{% include '_card.html' %}{% endfor %}
+</div>
+{% endblock %}

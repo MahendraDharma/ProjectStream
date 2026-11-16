@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Perpustakaan — ProjectStream{% endblock %}
+{% block content %}
+<h1 class="page-title">Perpustakaan Lokal</h1>
+
+<p class="page-sub">
+  {{ items | length }} file terdeteksi dari folder perpustakaan.
+  <button class="btn ghost" id="rescan-btn" data-endpoint="/api/library/rescan">Pindai Ulang</button>
+  <span id="rescan-result"></span>
+</p>
+
+{% if not items %}
+  <section class="notice">
+    <p>Belum ada file. Atur <code>PM_LIBRARY_DIRS</code> di <code>.env</code> ke folder video Anda
+       (dipisah <code>:</code>), mount folder-nya di docker-compose, lalu klik <em>Pindai Ulang</em>.</p>
+  </section>
+{% endif %}
+
+<table class="lib-table">
+  <thead>
+    <tr><th>Judul</th><th>Tahun</th><th>Tipe</th><th>TMDB</th><th>Ukuran</th><th></th></tr>
+  </thead>
+  <tbody>
+    {% for row in items %}
+    <tr>
+      <td>{{ row.title }}{% if row.season %} <span class="tag">S{{ '%02d' | format(row.season) }}E{{ '%02d' | format(row.episode) }}</span>{% endif %}</td>
+      <td>{{ row.year or '—' }}</td>
+      <td>{{ {'movie': 'Film', 'tv': 'TV'}[row.media_type] }}</td>
+      <td>{% if row.tmdb_id %}<a href="/detail/{{ row.media_type }}/{{ row.tmdb_id }}">#{{ row.tmdb_id }}</a>{% else %}—{% endif %}</td>
+      <td>{{ '%.1f' | format(row.size_bytes / 1073741824) }} GB</td>
+      <td><a class="btn small" href="/watch/local/{{ row.id }}">▶</a></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

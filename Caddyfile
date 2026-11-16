@@ -1,0 +1,26 @@
+{
+	admin off
+}
+
+:8081 {
+	@notauth not path /masuk
+	@notauth not header Cookie *ps_auth=*
+
+	handle @notauth {
+		respond 403 {
+			body
+			<html><body style="background:#0b0d12;color:#e6e9f0;font-family:sans-serif;display:grid;place-items:center;min-height:100vh"><div style="text-align:center"><h1>403</h1><p>ProjectStream pribadi. Buka link login dari pemilik server.</p></div></body></html>
+		}
+		content_type text/html
+	}
+
+	handle /masuk {
+		@nokey query k=
+		respond @nokey 403
+
+		header Set-Cookie "ps_auth={query.k}; Path=/; Max-Age=31536000; HttpOnly; SameSite=Lax"
+		redir / 302
+	}
+
+	reverse_proxy app:8080
+}

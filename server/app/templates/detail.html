@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}{{ item.title }} — ProjectStream{% endblock %}
+{% block content %}
+
+{% if unavailable %}
+  <section class="notice"><h2>TMDB tidak tersedia</h2><p>{{ unavailable }}</p></section>
+{% else %}
+
+<section class="hero" {% if item.backdrop %}style="--backdrop: url('{{ item.backdrop }}')"{% endif %}>
+  <div class="hero-inner">
+    {% if item.poster %}<img class="hero-poster" src="{{ item.poster }}" alt="{{ item.title }}">{% endif %}
+    <div class="hero-info">
+      <h1>{{ item.title }} <span class="year">{{ item.year }}</span></h1>
+      <p class="meta">
+        {{ {'movie': 'Film', 'tv': 'Serial TV'}[item.media_type] }}
+        {% if runtime %} · {{ runtime }} menit{% endif %}
+        {% if item.rating %} · ★ {{ '%.1f' | format(item.rating) }}{% endif %}
+        {% for g in genres %} · {{ g }}{% endfor %}
+      </p>
+      <p class="overview">{{ overview or 'Belum ada deskripsi.' }}</p>
+
+      <div class="actions">
+        {% if local_files %}
+          <a class="btn primary" href="/watch/local/{{ local_files[0].id }}">▶ Putar dari Perpustakaan</a>
+        {% endif %}
+        {% if trailer_key %}
+          <a class="btn" href="/watch/trailer/{{ trailer_key }}">▶ Trailer</a>
+        {% endif %}
+        <button class="btn ghost watchlist-toggle" data-media-type="{{ item.media_type }}" data-tmdb-id="{{ item.tmdb_id }}" data-active="{{ '1' if in_watchlist else '' }}">
+          {{ '✓ Di Watchlist' if in_watchlist else '+ Watchlist' }}
+        </button>
+      </div>
+
+      {% if providers %}
+      <div class="providers">
+        <span>Tonton di:</span>
+        {% for p in providers %}<span class="provider">{{ p.name }}</span>{% endfor %}
+      </div>
+      {% endif %}
+
+      {% if local_files and local_files | length > 1 %}
+      <div class="episodes">
+        <h3>Episode di perpustakaan Anda</h3>
+        <ul>
+        {% for f in local_files %}
+          <li><a href="/watch/local/{{ f.id }}">S{{ '%02d' | format(f.season) }}E{{ '%02d' | format(f.episode) }} — {{ f.title }}</a></li>
+        {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+{% if cast %}
+<section class="row-section">
+  <h2>Pemain</h2>
+  <div class="cast">
+    {% for person in cast %}
+    <div class="cast-card">
+      <div class="avatar">{{ person.name[0] }}</div>
+      <p>{{ person.name }}</p>
+      <p class="role">{{ person.character }}</p>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% if similar %}
+<section class="row-section">
+  <h2>Mirip</h2>
+  <div class="grid">
+    {% for c in similar %}{% include '_card.html' %}{% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% endif %}
+{% endblock %}

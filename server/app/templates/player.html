@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} — Putar — ProjectStream{% endblock %}
+{% block content %}
+
+<div class="player-wrap">
+  <h1 class="player-title">{{ title }}{% if subtitle %} <span class="tag">{{ subtitle }}</span>{% endif %}</h1>
+
+  {% if src %}
+  <video id="player" controls autoplay playsinline
+         src="{{ src }}{% if resume_to and resume_to > 10 %}#t={{ resume_to | int }}{% endif %}"
+         {% if tmdb_id %}data-tmdb-id="{{ tmdb_id }}" data-media-type="{{ media_type }}"{% endif %}></video>
+  {% else %}
+  <section class="notice"><p>Stream ini tidak tersedia.</p></section>
+  {% endif %}
+
+  {% if tmdb_id %}
+  <a class="btn ghost" href="/detail/{{ media_type }}/{{ tmdb_id }}">← Kembali ke detail</a>
+  {% endif %}
+</div>
+
+{% endblock %}
