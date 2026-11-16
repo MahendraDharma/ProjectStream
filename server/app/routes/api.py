@@ -581,7 +581,9 @@ async def party_ws(ws: WebSocket):
 
     member_id = secrets_token()
     member = Member(member_id=member_id, name="", role="guest", send=ws.send_json)
-    party_registry.join(room, member)
+    # NOTE: the member is registered into the room only AFTER its hello —
+    # joining on connect let broadcasts reach a client before its own
+    # "joined" message and put un-hello'd ghosts into member snapshots.
 
     async def send(payload: dict) -> None:
         await ws.send_json(payload)
@@ -598,6 +600,7 @@ async def party_ws(ws: WebSocket):
         async with room.lock:
             if room.host is None:
                 member.role = "host"
+        party_registry.join(room, member)
         await send(
             {
                 "type": "joined",
